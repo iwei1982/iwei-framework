@@ -1,0 +1,20 @@
+{
+    "name": "iwei/framework",
+    "type": "library",
+    "require": {
+        "psr/container": "~1.0",
+        "psr/simple-cache": "~1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "iwei",
+            "email": "iwei1982.tan@jkhxc.cn"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Iwei\\": "src/Core/"
+        }
+    }
+}
