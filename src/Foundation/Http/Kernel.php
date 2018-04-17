@@ -6,10 +6,10 @@
  * Time: 上午9:58
  */
 
-namespace Core\Foundaction\Http;
+namespace Core\Foundation\Http;
 
-use Core\Foundaction\Applicaction;
 use Core\Routing\Router;
+use Core\Interfaces\Foundation\Applicaction;
 use Core\Interfaces\Http\Kernel as KernelInterface;
 class Kernel implements KernelInterface
 {

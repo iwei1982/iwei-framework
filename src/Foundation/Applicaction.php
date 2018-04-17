@@ -6,12 +6,14 @@
  * Time: 下午1:46
  */
 
-namespace Core\Foundaction;
+namespace Core\Foundation;
 
 
 use Core\Containers\Container;
 
-class Applicaction extends Container
+use Core\Interfaces\Foundation\Applicaction as AppInterface;
+
+class Applicaction extends Container implements AppInterface
 {
     const VERSION = '1.0.0';
 
@@ -49,7 +51,7 @@ class Applicaction extends Container
 
         $this->instance('app', $this);
 
-        //$this->instance(Container::class, $this);
+        $this->instance(Container::class, $this);
 
     }
 
@@ -65,6 +67,14 @@ class Applicaction extends Container
     public function registerCoreContainerAliases()
     {
 
+        foreach ([
+                     'app'                  => [\Core\Foundation\Applicaction::class, \Core\Interfaces\Container\Container::class, \Core\Interfaces\Foundation\Applicaction::class],
+                     'router'               => [\Illuminate\Routing\Router::class, \Illuminate\Contracts\Routing\Registrar::class, \Illuminate\Contracts\Routing\BindingRegistrar::class],
+                 ] as $key => $aliases) {
+            foreach ($aliases as $alias) {
+                $this->alias($key, $alias);
+            }
+        }
     }
 
     public function make($abstract, array $parameters = [])
@@ -195,4 +205,93 @@ class Applicaction extends Container
     {
         $this->bootingCallbacks[] = $callback;
     }
+
+    public function version()
+    {
+        return static::VERSION;
+    }
+
+    public function basePath($path = '')
+    {
+        return $this->basePath.($path ? DIRECTORY_SEPARATOR.$path : $path);
+    }
+
+    public function environment()
+    {
+        if (func_num_args() > 0) {
+            $patterns = is_array(func_get_arg(0)) ? func_get_arg(0) : func_get_args();
+
+            return Str::is($patterns, $this['env']);
+        }
+
+        return $this['env'];
+    }
+
+    public function runningInConsole()
+    {
+        return php_sapi_name() === 'cli' || php_sapi_name() === 'phpdbg';
+    }
+
+    public function runningUnitTests()
+    {
+        return $this['env'] === 'testing';
+    }
+
+    public function registerConfiguredProviders()
+    {
+        $providers = Collection::make($this->config['app.providers'])
+            ->partition(function ($provider) {
+                return Str::startsWith($provider, 'Illuminate\\');
+            });
+
+        $providers->splice(1, 0, [$this->make(PackageManifest::class)->providers()]);
+
+        (new ProviderRepository($this, new Filesystem, $this->getCachedServicesPath()))
+            ->load($providers->collapse()->toArray());
+    }
+
+    public function isDownForMaintenance()
+    {
+        return file_exists($this->storagePath().'/framework/down');
+    }
+
+    public function boot()
+    {
+        if ($this->booted) {
+            return;
+        }
+
+        // Once the application has booted we will also fire some "booted" callbacks
+        // for any listeners that need to do work after this initial booting gets
+        // finished. This is useful when ordering the boot-up processes we run.
+        $this->fireAppCallbacks($this->bootingCallbacks);
+
+        array_walk($this->serviceProviders, function ($p) {
+            $this->bootProvider($p);
+        });
+
+        $this->booted = true;
+
+        $this->fireAppCallbacks($this->bootedCallbacks);
+    }
+
+    public function booted($callback)
+    {
+        $this->bootedCallbacks[] = $callback;
+
+        if ($this->isBooted()) {
+            $this->fireAppCallbacks([$callback]);
+        }
+    }
+
+    public function getCachedServicesPath()
+    {
+        return $this->bootstrapPath().'/cache/services.php';
+    }
+
+    public function getCachedPackagesPath()
+    {
+        return $this->bootstrapPath().'/cache/packages.php';
+    }
+
 }

@@ -297,6 +297,11 @@ class Container implements ArrayAccess, ContainerInterface
         $concrete = $this->getConcrete($abstract);
         if($this->isBuildable($concrete,$abstract))
         {
+            if($abstract == 'Core\Interfaces\Http\Kernel')
+            {
+                $object = $this->build($concrete,true);
+                var_dump($object);die();
+            }
             $object = $this->build($concrete);
         }
         else
@@ -411,7 +416,7 @@ class Container implements ArrayAccess, ContainerInterface
         return $concrete === $abstract || $concrete instanceof Closure;
     }
 
-    public function build($concrete)
+    public function build($concrete,$test = null)
     {
         // If the concrete type is actually a Closure, we will just execute it and
         // hand back the results of the functions, which allows functions to be
