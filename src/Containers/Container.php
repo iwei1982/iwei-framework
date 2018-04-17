@@ -297,11 +297,6 @@ class Container implements ArrayAccess, ContainerInterface
         $concrete = $this->getConcrete($abstract);
         if($this->isBuildable($concrete,$abstract))
         {
-            if($abstract == 'Core\Interfaces\Http\Kernel')
-            {
-                $object = $this->build($concrete,true);
-                var_dump($object);die();
-            }
             $object = $this->build($concrete);
         }
         else
